@@ -11,7 +11,7 @@
  Target Server Version : 100424 (10.4.24-MariaDB)
  File Encoding         : 65001
 
- Date: 19/02/2025 15:09:29
+ Date: 20/02/2025 13:06:13
 */
 
 SET NAMES utf8mb4;
@@ -35,7 +35,7 @@ CREATE TABLE `detailpenjualan`  (
   INDEX `id_penjualan`(`id_penjualan` ASC) USING BTREE,
   INDEX `id_detail`(`id_detail` ASC) USING BTREE,
   INDEX `id_Produk`(`id_produk` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 34 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of detailpenjualan
@@ -52,6 +52,29 @@ INSERT INTO `detailpenjualan` VALUES (19, 7, 6, 3, 30000.00, '2025-02-18');
 INSERT INTO `detailpenjualan` VALUES (27, 6, 5, 10, 80000.00, '2025-02-19');
 INSERT INTO `detailpenjualan` VALUES (29, 8, 5, 10, 80000.00, NULL);
 INSERT INTO `detailpenjualan` VALUES (30, 8, 5, 10, 80000.00, NULL);
+INSERT INTO `detailpenjualan` VALUES (31, 8, 4, 10, 80000.00, '2025-02-20');
+
+-- ----------------------------
+-- Table structure for log
+-- ----------------------------
+DROP TABLE IF EXISTS `log`;
+CREATE TABLE `log`  (
+  `id_log` int NOT NULL AUTO_INCREMENT,
+  `tabel` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `metode` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `aktivitas` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`id_log`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of log
+-- ----------------------------
+INSERT INTO `log` VALUES (7, 'Produk', 'INSERT', 'Nama Produk: Yakult, Harga: 5000.00, Stok: 100, Harga Awal: 4000.00');
+INSERT INTO `log` VALUES (8, 'Produk', 'UPDATE', 'Nama Produk: Sosis Kanzler, Harga: 8000.00, Stok: 141, Harga Awal: 6000.00');
+INSERT INTO `log` VALUES (9, 'Detail Penjualan', 'DELETE', 'ID Detail: 33, ID Penjualan: 8, ID Produk: 5, Jumlah Produk: 1, Sub Total: 100000.00, Tanggal: 2025-02-20');
+INSERT INTO `log` VALUES (10, 'Produk', 'UPDATE', 'Nama Produk: Sosis Kanzler, Harga: 8000.00, Stok: 151, Harga Awal: 6000.00');
+INSERT INTO `log` VALUES (11, 'Detail Penjualan', 'DELETE', 'ID Detail: 32, ID Penjualan: 8, ID Produk: 5, Jumlah Produk: 10, Sub Total: 90000.00, Tanggal: 2025-02-20');
+INSERT INTO `log` VALUES (12, 'Detail Penjualan', 'UPDATE', 'ID Detail: 31, ID Penjualan: 8, ID Produk: 4, Jumlah Produk: 10, Sub Total: 80000.00, Tanggal: 2025-02-20');
 
 -- ----------------------------
 -- Table structure for pelanggan
@@ -118,7 +141,7 @@ CREATE TABLE `produk`  (
   INDEX `harga`(`harga` ASC) USING BTREE,
   INDEX `harga_awal`(`harga_awal` ASC) USING BTREE,
   INDEX `id_produk`(`id_produk` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of produk
@@ -127,9 +150,10 @@ INSERT INTO `produk` VALUES (1, 'Sabun', 10000.00, 1114, 8000.00);
 INSERT INTO `produk` VALUES (2, 'Minyak Goreng', 20000.00, 82, 18000.00);
 INSERT INTO `produk` VALUES (3, 'Ice Cream', 10000.00, 95, 8000.00);
 INSERT INTO `produk` VALUES (4, 'Mie Instant', 3000.00, 100, 2500.00);
-INSERT INTO `produk` VALUES (5, 'Sosis Kanzler', 8000.00, 170, 6000.00);
+INSERT INTO `produk` VALUES (5, 'Sosis Kanzler', 8000.00, 151, 6000.00);
 INSERT INTO `produk` VALUES (6, 'Fruit Tea', 7000.00, 90, 5000.00);
 INSERT INTO `produk` VALUES (7, 'Nabati', 3000.00, 0, 2500.00);
+INSERT INTO `produk` VALUES (8, 'Yakult', 5000.00, 100, 4000.00);
 
 -- ----------------------------
 -- Table structure for produk_masuk
@@ -158,6 +182,14 @@ CREATE TRIGGER `StokPenjualan` AFTER INSERT ON `detailpenjualan` FOR EACH ROW IF
 update produk set stok = stok - new.jumlah_produk
 where id_produk = new.id_produk;
 
+insert into log(tabel,metode, aktivitas) VALUES
+('Detail Penjualan',"INSERT", CONCAT(
+'ID Detail: ', new.id_detail,', '
+'ID Penjualan: ', new.id_penjualan,', '
+'ID Produk: ', new.id_produk,', '
+'Jumlah Produk: ', new.jumlah_produk,', '
+'Sub Total: ', new.subtotal,', '
+'Tanggal: ', new.tanggal));
 ELSE
 
 signal sqlstate '45000' set message_text = "Stok lebih kecil dari Jumlah";
@@ -169,10 +201,168 @@ delimiter ;
 -- ----------------------------
 -- Triggers structure for table detailpenjualan
 -- ----------------------------
+DROP TRIGGER IF EXISTS `stok_log_update`;
+delimiter ;;
+CREATE TRIGGER `stok_log_update` AFTER UPDATE ON `detailpenjualan` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+("Detail Penjualan","UPDATE", CONCAT(
+'ID Detail: ', new.id_detail,', '
+'ID Penjualan: ', new.id_penjualan,', '
+'ID Produk: ', new.id_produk,', '
+'Jumlah Produk: ', new.jumlah_produk,', '
+'Sub Total: ', new.subtotal,', '
+'Tanggal: ', new.tanggal))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table detailpenjualan
+-- ----------------------------
 DROP TRIGGER IF EXISTS `StokDelete`;
 delimiter ;;
 CREATE TRIGGER `StokDelete` AFTER DELETE ON `detailpenjualan` FOR EACH ROW update produk set stok = stok + old.jumlah_produk
 where id_produk = old.id_produk
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table detailpenjualan
+-- ----------------------------
+DROP TRIGGER IF EXISTS `stok_log_delete`;
+delimiter ;;
+CREATE TRIGGER `stok_log_delete` AFTER DELETE ON `detailpenjualan` FOR EACH ROW insert into log(tabel, metode, aktivitas) VALUES
+("Detail Penjualan","DELETE", CONCAT(
+'ID Detail: ', old.id_detail,', '
+'ID Penjualan: ', old.id_penjualan,', '
+'ID Produk: ', old.id_produk,', '
+'Jumlah Produk: ', old.jumlah_produk,', '
+'Sub Total: ', old.subtotal,', '
+'Tanggal: ', old.tanggal))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table pelanggan
+-- ----------------------------
+DROP TRIGGER IF EXISTS `insert_log_pelanggan`;
+delimiter ;;
+CREATE TRIGGER `insert_log_pelanggan` AFTER INSERT ON `pelanggan` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Pelanggan',"INSERT", CONCAT(
+'Nama Pelanggan: ', new.NamaPelanggan,', '
+'Alamat: ', new.Alamat,', '
+'Nomor Telepon: ', new.NomorTelepon))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table pelanggan
+-- ----------------------------
+DROP TRIGGER IF EXISTS `update_log_pelanggan`;
+delimiter ;;
+CREATE TRIGGER `update_log_pelanggan` AFTER UPDATE ON `pelanggan` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Pelanggan',"UPDATE", CONCAT(
+'Nama Pelanggan: ', new.NamaPelanggan,', '
+'Alamat: ', new.Alamat,', '
+'Nomor Telepon: ', new.NomorTelepon))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table pelanggan
+-- ----------------------------
+DROP TRIGGER IF EXISTS `delete_log_pelanggan`;
+delimiter ;;
+CREATE TRIGGER `delete_log_pelanggan` AFTER DELETE ON `pelanggan` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Pelanggan',"INSERT", CONCAT(
+'Nama Pelanggan: ', old.NamaPelanggan,', '
+'Alamat: ', old.Alamat,', '
+'Nomor Telepon: ', old.NomorTelepon))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table penjualan
+-- ----------------------------
+DROP TRIGGER IF EXISTS `log_insert_penjualan`;
+delimiter ;;
+CREATE TRIGGER `log_insert_penjualan` AFTER INSERT ON `penjualan` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Penjualan',"INSERT", CONCAT(
+'Tanggal Penjualan: ', new.TanggalPenjualan,', '
+'Total Harga: ', new.TotalHarga,', '
+'Kembalian: ', new.kembalian,', '
+'ID Pelanggan: ', new.pembayaran,', '
+'Metode Pembayaran: ', new.Pembayaran))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table penjualan
+-- ----------------------------
+DROP TRIGGER IF EXISTS `log_update_penjualan`;
+delimiter ;;
+CREATE TRIGGER `log_update_penjualan` AFTER UPDATE ON `penjualan` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Penjualan',"UPDATE", CONCAT(
+'Tanggal Penjualan: ', new.TanggalPenjualan,', '
+'Total Harga: ', new.TotalHarga,', '
+'Kembalian: ', new.kembalian,', '
+'ID Pelanggan: ', new.pembayaran,', '
+'Metode Pembayaran: ', new.Pembayaran))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table penjualan
+-- ----------------------------
+DROP TRIGGER IF EXISTS `log_delete_penjualan`;
+delimiter ;;
+CREATE TRIGGER `log_delete_penjualan` AFTER DELETE ON `penjualan` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Penjualan',"DELETE", CONCAT(
+'Tanggal Penjualan: ', old.TanggalPenjualan,', '
+'Total Harga: ', old.TotalHarga,', '
+'Kembalian: ', old.kembalian,', '
+'ID Pelanggan: ', old.pembayaran,', '
+'Metode Pembayaran: ', old.Pembayaran))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table produk
+-- ----------------------------
+DROP TRIGGER IF EXISTS `log_insert`;
+delimiter ;;
+CREATE TRIGGER `log_insert` AFTER INSERT ON `produk` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Produk',"INSERT", CONCAT(
+'Nama Produk: ', new.nama_produk,', '
+'Harga: ', new.harga,', '
+'Stok: ', new.stok,', '
+'Harga Awal: ', new.harga_awal))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table produk
+-- ----------------------------
+DROP TRIGGER IF EXISTS `log_update`;
+delimiter ;;
+CREATE TRIGGER `log_update` AFTER UPDATE ON `produk` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Produk',"UPDATE", CONCAT(
+'Nama Produk: ', new.nama_produk,', '
+'Harga: ', new.harga,', '
+'Stok: ', new.stok,', '
+'Harga Awal: ', new.harga_awal))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table produk
+-- ----------------------------
+DROP TRIGGER IF EXISTS `log_delete`;
+delimiter ;;
+CREATE TRIGGER `log_delete` AFTER DELETE ON `produk` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Produk',"DELETE", CONCAT(
+'Nama Produk: ', old.nama_produk,', '
+'Harga: ', old.harga,', '
+'Stok: ', old.stok,', '
+'Harga Awal: ', old.harga_awal))
 ;;
 delimiter ;
 
@@ -189,10 +379,46 @@ delimiter ;
 -- ----------------------------
 -- Triggers structure for table produk_masuk
 -- ----------------------------
+DROP TRIGGER IF EXISTS `log_produk_insert`;
+delimiter ;;
+CREATE TRIGGER `log_produk_insert` AFTER INSERT ON `produk_masuk` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Produk Masuk',"INSERT", CONCAT(
+'ID Produk: ', new.id_produk,', '
+'Stok: ', new.stok_masuk))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table produk_masuk
+-- ----------------------------
+DROP TRIGGER IF EXISTS `log_produk_update`;
+delimiter ;;
+CREATE TRIGGER `log_produk_update` AFTER UPDATE ON `produk_masuk` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Produk Masuk',"INSERT", CONCAT(
+'ID Produk: ', new.id_produk,', '
+'Stok: ', new.stok_masuk))
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table produk_masuk
+-- ----------------------------
 DROP TRIGGER IF EXISTS `produkhapus`;
 delimiter ;;
 CREATE TRIGGER `produkhapus` AFTER DELETE ON `produk_masuk` FOR EACH ROW update produk set stok = stok - old.stok_masuk
 where id_produk = old.id_produk
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table produk_masuk
+-- ----------------------------
+DROP TRIGGER IF EXISTS `log_produk_delete`;
+delimiter ;;
+CREATE TRIGGER `log_produk_delete` AFTER DELETE ON `produk_masuk` FOR EACH ROW insert into log(tabel,metode, aktivitas) VALUES
+('Produk Masuk',"INSERT", CONCAT(
+'ID Produk: ', old.id_produk,', '
+'Stok: ', old.stok_masuk))
 ;;
 delimiter ;
 
