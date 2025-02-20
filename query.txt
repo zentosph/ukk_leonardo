@@ -1,0 +1,13 @@
+select count(detailpenjualan.id_produk),nama_produk  from detailpenjualan join produk on 
+detailpenjualan.id_produk = produk.id_produk where tanggal = "2025-02-12" group by detailpenjualan.id_produk ORDER BY 
+count(detailpenjualan.id_produk) desc 
+
+select * from detailpenjualan where tanggal = "2025-02-12"
+
+select avg(TotalHarga), MONTHNAME(TanggalPenjualan) from penjualan group by MONTH(TanggalPenjualan)
+
+select sum(totalharga), pembayaran from penjualan where TanggalPenjualan = "2025-02-12" group by pembayaran
+
+select * from produk where stok = 0
+
+select harga, harga_awal, sum(jumlah_produk),sum(jumlah_produk) * MAX(harga - harga_awal), produk.nama_produk from produk join detailpenjualan on produk.id_produk = detailpenjualan.id_produk group by(produk.id_produk) order by MAX((harga * jumlah_produk) - (harga_awal * jumlah_produk)) DESC limit 1
